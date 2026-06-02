@@ -75,6 +75,16 @@ A production adapter should:
 4. Preserve platform IDs, timestamps, room IDs, mentioned agents, and audit metadata.
 5. Emit only metadata/content the dashboard is authorized to display for the current user.
 
+
+## Agent runtime package
+
+The platform-facing agent definitions are under `apps/agents`. The current implementation includes:
+
+- `TriageAgent`: registers `@cascade/triage` with a CrewAI adapter, posts the policy summary and `incident_frame`, then @mentions `@cascade/regulatory-coordinator`.
+- `RegulatoryCoordinator`: registers `@cascade/regulatory-coordinator`, computes triggered regimes, runs registry discovery with tags such as `hipaa-baa`, `ccpa`, `gdpr`, and `sec-8k`, invites the selected specialist into the Regulatory Room, and posts the delegated assessment request.
+
+The relay is intentionally separate from these business agents. It should observe room activity with read-only permissions and never mutate incident state.
+
 ## Platform requirements
 
 Cascade assumes the underlying platform supports:

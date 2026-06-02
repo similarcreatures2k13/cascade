@@ -44,7 +44,7 @@ export const rooms: Array<{ id: RoomId; name: string; privileged: boolean; descr
 export const agents: Record<AgentId, { name: string; handle: string; framework: string; color: string }> = {
   triage: { name: "Triage Agent", handle: "@cascade/triage", framework: "CrewAI", color: "#00ff9f" },
   forensics: { name: "Forensics Liaison", handle: "@cascade/forensics", framework: "LangGraph", color: "#00e0c0" },
-  regulatory: { name: "Regulatory Coordinator", handle: "@cascade/regulatory", framework: "LangGraph", color: "#7c5cff" },
+  regulatory: { name: "Regulatory Coordinator", handle: "@cascade/regulatory-coordinator", framework: "LangGraph", color: "#7c5cff" },
   hipaa: { name: "HIPAA-BAA Specialist", handle: "@specialist/hipaa-baa", framework: "Pydantic AI", color: "#2dd4bf" },
   ccpa: { name: "CCPA Specialist", handle: "@specialist/ccpa", framework: "Pydantic AI", color: "#38bdf8" },
   sec: { name: "SEC 8-K Specialist", handle: "@specialist/sec-8k", framework: "Pydantic AI", color: "#facc15" },

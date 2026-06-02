@@ -34,6 +34,7 @@ import {
   type DemoEvent,
   type RoomId,
 } from "@/lib/cascade-script";
+import { parseRelayMessage, relayEventToDemoEvent, type RelayConnectionStatus } from "@/lib/relay-protocol";
 import { cn, formatCountdown, formatCurrency, formatIncidentTime } from "@/lib/utils";
 import { useDemoStore } from "@/store/use-demo-store";
 
@@ -52,9 +53,8 @@ function severityClasses(severity: DemoEvent["severity"]) {
   }
 }
 
-function activeRoomForElapsed(elapsed: number): RoomId {
-  const latest = [...demoEvents].reverse().find((event) => event.at <= elapsed);
-  return latest?.room ?? "war";
+function activeRoomForEvents(events: DemoEvent[]): RoomId {
+  return events.at(-1)?.room ?? "war";
 }
 
 function biLoss(elapsed: number) {
@@ -75,9 +75,13 @@ function recruitedSpecialists(elapsed: number) {
 export function CascadeDashboard() {
   const elapsed = useDemoStore((state) => state.elapsed);
   const isPlaying = useDemoStore((state) => state.isPlaying);
+  const liveEvents = useDemoStore((state) => state.liveEvents);
+  const relayStatus = useDemoStore((state) => state.relayStatus);
   const setElapsed = useDemoStore((state) => state.setElapsed);
   const togglePlaying = useDemoStore((state) => state.togglePlaying);
   const reset = useDemoStore((state) => state.reset);
+
+  useRelaySubscription();
 
   useEffect(() => {
     if (!isPlaying || elapsed >= DEMO_DURATION_SECONDS) return;
@@ -92,8 +96,9 @@ export function CascadeDashboard() {
     return () => window.clearInterval(interval);
   }, [elapsed, isPlaying, setElapsed]);
 
-  const visibleEvents = useMemo(() => demoEvents.filter((event) => elapsed >= event.at), [elapsed]);
-  const activeRoom = activeRoomForElapsed(elapsed);
+  const scriptedEvents = useMemo(() => demoEvents.filter((event) => elapsed >= event.at), [elapsed]);
+  const visibleEvents = liveEvents.length > 0 ? liveEvents : scriptedEvents;
+  const activeRoom = activeRoomForEvents(visibleEvents);
   const activeEvents = visibleEvents.filter((event) => event.room === activeRoom).slice(-5);
   const latestEvent = visibleEvents.at(-1);
   const approvalActive = elapsed >= 96;
@@ -104,7 +109,7 @@ export function CascadeDashboard() {
   return (
     <main className="scanline flex h-screen w-screen flex-col overflow-hidden bg-[#0a0a0a] text-white">
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(0,255,159,0.14),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(0,224,192,0.12),transparent_26%),linear-gradient(135deg,#0a0a0a,#111111_46%,#070707)]" />
-      <TopBar elapsed={elapsed} />
+      <TopBar elapsed={elapsed} relayStatus={relayStatus} liveEventCount={liveEvents.length} />
 
       <section className="relative z-10 grid min-h-0 flex-1 grid-cols-[240px_minmax(0,1fr)_320px]">
         <LeftRail elapsed={elapsed} activeRoom={activeRoom} visibleEvents={visibleEvents} />
@@ -139,7 +144,62 @@ export function CascadeDashboard() {
   );
 }
 
-function TopBar({ elapsed }: { elapsed: number }) {
+
+function useRelaySubscription() {
+  const ingestRelayEvent = useDemoStore((state) => state.ingestRelayEvent);
+  const replaceLiveEvents = useDemoStore((state) => state.replaceLiveEvents);
+  const setRelayStatus = useDemoStore((state) => state.setRelayStatus);
+  const relayUrl =
+    process.env.NEXT_PUBLIC_CASCADE_RELAY_WS ??
+    (process.env.NODE_ENV === "development" ? "ws://localhost:8765/rooms/cascade-demo" : "");
+
+  useEffect(() => {
+    if (!relayUrl || typeof WebSocket === "undefined") {
+      setRelayStatus("scripted");
+      return;
+    }
+
+    let closedByComponent = false;
+    const socket = new WebSocket(relayUrl);
+    setRelayStatus("connecting");
+
+    socket.addEventListener("open", () => setRelayStatus("live"));
+    socket.addEventListener("message", (message) => {
+      if (typeof message.data !== "string") return;
+
+      const parsed = parseRelayMessage(message.data);
+      if (!parsed || parsed.messageType === "heartbeat") return;
+
+      const currentElapsed = useDemoStore.getState().elapsed;
+
+      if (parsed.messageType === "snapshot") {
+        replaceLiveEvents(parsed.events.map((event) => relayEventToDemoEvent(event, event.elapsedSeconds ?? currentElapsed)));
+        return;
+      }
+
+      ingestRelayEvent(relayEventToDemoEvent(parsed, parsed.elapsedSeconds ?? currentElapsed));
+    });
+    socket.addEventListener("error", () => setRelayStatus("degraded"));
+    socket.addEventListener("close", () => {
+      if (!closedByComponent) setRelayStatus("degraded");
+    });
+
+    return () => {
+      closedByComponent = true;
+      socket.close();
+    };
+  }, [ingestRelayEvent, relayUrl, replaceLiveEvents, setRelayStatus]);
+}
+
+function TopBar({
+  elapsed,
+  relayStatus,
+  liveEventCount,
+}: {
+  elapsed: number;
+  relayStatus: RelayConnectionStatus;
+  liveEventCount: number;
+}) {
   return (
     <header className="relative z-10 grid h-[60px] grid-cols-[240px_minmax(0,1fr)_320px] border-b border-white/10 bg-black/70 backdrop-blur-xl">
       <div className="flex items-center gap-2 border-r border-white/10 px-4">
@@ -163,6 +223,7 @@ function TopBar({ elapsed }: { elapsed: number }) {
           <span className="inline-flex items-center gap-2 rounded-full border border-[#ff3b5c]/45 bg-[#ff3b5c]/10 px-3 py-1 text-xs font-semibold text-[#ffb3c0]">
             <Flame size={13} /> Severity 1 - Ransomware
           </span>
+          <RelayStatusPill status={relayStatus} liveEventCount={liveEventCount} />
         </div>
       </div>
 
@@ -170,6 +231,32 @@ function TopBar({ elapsed }: { elapsed: number }) {
         Attorney work product - privileged
       </div>
     </header>
+  );
+}
+
+function RelayStatusPill({ status, liveEventCount }: { status: RelayConnectionStatus; liveEventCount: number }) {
+  const label =
+    status === "live"
+      ? `Relay live - ${liveEventCount} events`
+      : status === "connecting"
+        ? "Connecting relay"
+        : status === "degraded"
+          ? "Relay offline - scripted fallback"
+          : "Scripted fallback";
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold",
+        status === "live" && "border-[#00ff9f]/45 bg-[#00ff9f]/10 text-[#caffea]",
+        status === "connecting" && "border-[#00e0c0]/35 bg-[#00e0c0]/10 text-[#a8fff1]",
+        status === "degraded" && "border-amber-300/45 bg-amber-300/10 text-amber-100",
+        status === "scripted" && "border-white/10 bg-white/[0.05] text-zinc-300",
+      )}
+    >
+      <RadioTower size={13} />
+      {label}
+    </span>
   );
 }
 
@@ -195,7 +282,7 @@ function LeftRail({
           const room = rooms.find((candidate) => candidate.id === roomId)!;
           const unread = visibleEvents.filter((event) => event.room === roomId).length;
           const isActive = activeRoom === roomId;
-          const hasLiveAgent = demoEvents.some((event) => event.room === roomId && elapsed >= event.at && elapsed - event.at < 18);
+          const hasLiveAgent = visibleEvents.some((event) => event.room === roomId && elapsed >= event.at && elapsed - event.at < 18);
 
           return (
             <motion.div

@@ -26,3 +26,6 @@ pnpm-debug.log*
 
 # typescript
 *.tsbuildinfo
+# python
+__pycache__/
+*.py[cod]

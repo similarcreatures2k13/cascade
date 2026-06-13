@@ -185,10 +185,10 @@ export const demoEvents: DemoEvent[] = [
 ];
 
 export const notificationClocks = [
-  { label: "HIPAA BAA covered-entity notice", totalSeconds: 72 * 3600, startsAt: 25, tone: "critical" as const },
-  { label: "GDPR supervisory authority", totalSeconds: 72 * 3600, startsAt: 43, tone: "critical" as const },
-  { label: "SEC 8-K materiality decision", totalSeconds: 4 * 24 * 3600, startsAt: 39, tone: "warning" as const },
-  { label: "California resident notice", totalSeconds: 30 * 24 * 3600, startsAt: 32, tone: "normal" as const },
+  { label: "GDPR Art. 33 — DPC Ireland", totalSeconds: 72 * 3600, startsAt: 43, tone: "critical" as const },
+  { label: "SEC Form 8-K Item 1.05", totalSeconds: 4 * 24 * 3600, startsAt: 39, tone: "critical" as const },
+  { label: "HIPAA Breach Notification", totalSeconds: 60 * 24 * 3600, startsAt: 25, tone: "warning" as const },
+  { label: "CA Civ Code §1798.82", totalSeconds: 30 * 24 * 3600, startsAt: 32, tone: "normal" as const },
 ];
 
 export const approvalItems = [

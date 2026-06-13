@@ -23,6 +23,9 @@ export type DemoEvent = {
 };
 
 export const DEMO_DURATION_SECONDS = 120;
+export const INCIDENT_DURATION_HOURS = 72;
+export const INCIDENT_TIME_MULTIPLIER =
+  (INCIDENT_DURATION_HOURS * 3600) / DEMO_DURATION_SECONDS; // = 2160
 
 export const clientProfile = {
   name: "Meridian Health Analytics",

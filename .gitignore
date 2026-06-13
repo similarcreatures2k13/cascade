@@ -29,3 +29,5 @@ pnpm-debug.log*
 # python
 __pycache__/
 *.py[cod]
+apps/agents/agent_config.yaml
+apps/agents/.env

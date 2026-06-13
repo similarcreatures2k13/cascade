@@ -1,91 +1,91 @@
-"""Regulatory coordinator agent with dynamic specialist discovery."""
+"""Cascade Regulatory Coordinator — identifies notification obligations and recruits specialists.
+
+When @mentioned with an incident frame, this agent:
+1. Maps incident facts to triggered regulatory regimes (HIPAA, CCPA, GDPR, SEC 8-K, etc.)
+2. Uses thenvoi_lookup_peers to find specialist agents for each regime
+3. Uses thenvoi_add_participant to bring them into the room
+4. @mentions them with the relevant incident facts
+
+This is the hero agent that demonstrates dynamic agent discovery on Band.
+"""
 
 from __future__ import annotations
 
-from typing import Any
+import asyncio
+import logging
+import os
 
-from band_sdk import Agent, RegistryQuery
+from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI
+from langgraph.checkpoint.memory import InMemorySaver
 
-from .models import IncidentFrame
+from band import Agent
+from band.integrations.langgraph import LangGraphAdapter
 
-
-REGIME_TAGS = {
-    "hipaa-baa": {"data_types": {"patient_data", "phi"}, "geographies": set()},
-    "ccpa": {"data_types": {"consumer_pii", "employee_pii", "patient_data"}, "geographies": {"US-CA"}},
-    "gdpr": {"data_types": {"patient_data", "clinical_trial_records", "employee_pii"}, "geographies": {"EU", "IE"}},
-    "sec-8k": {"data_types": set(), "geographies": set()},
-}
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(message)s")
+logger = logging.getLogger("cascade.regulatory")
 
 
-class RegulatoryCoordinator:
-    """Hero agent: identify obligations, discover specialists, and recruit them."""
+SYSTEM_PROMPT = """You are the Cascade Regulatory Coordinator.
 
-    def __init__(self, agent_id: str, api_key: str, adapter: Any) -> None:
-        self.agent = Agent.create(
-            adapter=adapter,
-            agent_id=agent_id,
-            api_key=api_key,
-            handle="@cascade/regulatory-coordinator",
-        )
+Your role: when triage establishes an incident frame, you identify which regulatory notification
+regimes are triggered and recruit specialist agents to handle each one.
 
-    async def on_message(self, message: Any, context: Any) -> None:
-        attachments = getattr(context, "attachments", {})
-        frame = IncidentFrame.from_mapping(attachments["incident_frame"])
-        regulatory_room_id = getattr(context, "regulatory_room_id", context.room_id)
+When @mentioned with incident facts, do the following:
 
-        triggered = self.identify_obligations(frame)
-        await self.agent.post(
-            room_id=regulatory_room_id,
-            content=(
-                "Regulatory graph activated. Triggered regimes: "
-                f"{', '.join(triggered) if triggered else 'none yet'}."
-            ),
-            attachments={"incident_frame": frame.dict(), "triggered_regimes": triggered},
-        )
+1. Identify triggered regimes from the facts:
+   - HIPAA Breach Notification Rule: triggered when PHI is involved (healthcare data, BAA data)
+   - California Civ Code §1798.82 (CCPA breach): California residents in affected set
+   - GDPR Article 33/34: EU subjects (any EU member state, including Ireland subsidiaries)
+   - SEC Form 8-K Item 1.05: material cyber incident at a public company
+   - State breach laws: additional state-level notifications based on affected residents
 
-        for regime in triggered:
-            specialist = await self.discover_specialist(regime)
-            if specialist is None:
-                await self.agent.post(
-                    room_id=regulatory_room_id,
-                    content=f"No registered specialist found for {regime}; keeping obligation on coordinator worklist.",
-                    attachments={"incident_frame": frame.dict(), "regime": regime},
-                )
-                continue
+2. For each triggered regime, use the thenvoi_lookup_peers tool to find an available specialist.
+   Search by relevant tags (e.g., "hipaa", "specialist", "notif").
 
-            await self.agent.invite_to_room(
-                agent_handle=specialist.handle,
-                room_id=regulatory_room_id,
-            )
-            await self.agent.post(
-                room_id=regulatory_room_id,
-                content=(
-                    f"{specialist.handle} - incident triggers {regime}. "
-                    "Frame attached. Please assess obligations and clocks."
-                ),
-                attachments={"incident_frame": frame.dict(), "regime": regime},
-            )
+3. For each specialist found, use thenvoi_add_participant to invite them to this chat room.
 
-    def identify_obligations(self, frame: IncidentFrame) -> list[str]:
-        triggered: list[str] = []
-        data_types = set(frame.data_types)
-        geographies = set(frame.geographies)
+4. After adding each specialist, post a message @mentioning them with the key facts they
+   need to assess obligations. Example:
+   "@hipaa-baa-specialist - PHI exfiltration confirmed, 340K records affected, healthcare SaaS
+   acting as Business Associate. Please assess notification obligations and timing."
 
-        if frame.healthcare_data or data_types.intersection(REGIME_TAGS["hipaa-baa"]["data_types"]):
-            triggered.append("hipaa-baa")
-        if "US-CA" in geographies and data_types.intersection(REGIME_TAGS["ccpa"]["data_types"]):
-            triggered.append("ccpa")
-        if geographies.intersection(REGIME_TAGS["gdpr"]["geographies"]):
-            triggered.append("gdpr")
-        if frame.public_company:
-            triggered.append("sec-8k")
+5. Post a brief summary of the regimes you identified and which specialists you recruited.
 
-        return triggered
+You are decisive and procedural. You do not invent obligations not supported by the facts.
+You do not give legal advice yourself - your job is routing to specialists who do.
+"""
 
-    async def discover_specialist(self, regime: str) -> Any | None:
-        query = RegistryQuery(
-            tags=[regime, "notification", "specialist"],
-            scope="personal",
-        )
-        specialists = await self.agent.discover(query)
-        return specialists[0] if specialists else None
+
+async def main() -> None:
+    load_dotenv()
+
+    from band.config import load_agent_config
+    agent_id, api_key = load_agent_config("cascade_regulatory")
+    logger.info(f"Loaded agent {agent_id}")
+
+    llm = ChatOpenAI(
+        model="openai/gpt-4o",
+        base_url=os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1"),
+        api_key=os.getenv("OPENAI_API_KEY"),
+        temperature=0.2,
+    )
+
+    adapter = LangGraphAdapter(
+        llm=llm,
+        checkpointer=InMemorySaver(),
+        system_prompt=SYSTEM_PROMPT,
+    )
+
+    agent = Agent.create(
+        adapter=adapter,
+        agent_id=agent_id,
+        api_key=api_key,
+    )
+
+    logger.info("Cascade Regulatory Coordinator is running. Press Ctrl+C to stop.")
+    await agent.run()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

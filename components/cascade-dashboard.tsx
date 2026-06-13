@@ -29,6 +29,7 @@ import {
   clientProfile,
   demoEvents,
   DEMO_DURATION_SECONDS,
+  INCIDENT_TIME_MULTIPLIER,
   notificationClocks,
   rooms,
   type DemoEvent,
@@ -214,7 +215,7 @@ function TopBar({
 
       <div className="flex items-center justify-between px-5">
         <div className="font-mono text-4xl font-semibold tabular-nums tracking-[-0.06em] text-[#00ff9f] drop-shadow-[0_0_18px_rgba(0,255,159,0.35)]">
-          {formatIncidentTime(elapsed)}
+          {formatIncidentTime(elapsed * INCIDENT_TIME_MULTIPLIER)}
         </div>
         <div className="flex items-center gap-3">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-zinc-200">
@@ -368,7 +369,7 @@ function Message({ event }: { event: DemoEvent }) {
             <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">{agent.framework}</p>
           </div>
         </div>
-        <time className="font-mono text-[11px] text-zinc-500">{formatIncidentTime(event.at)}</time>
+        <time className="font-mono text-[11px] text-zinc-500">{formatIncidentTime(event.at * INCIDENT_TIME_MULTIPLIER)}</time>
       </div>
       <h2 className="text-sm font-semibold text-white">{event.title}</h2>
       <p className="mt-1 text-sm leading-relaxed text-zinc-300">{event.body}</p>
@@ -468,7 +469,8 @@ function RightRail({
       <Panel title="Notification clocks" icon={<Clock3 size={15} />}>
         <div className="space-y-2">
           {notificationClocks.map((clock) => {
-            const remaining = clock.totalSeconds - Math.max(0, elapsed - clock.startsAt);
+            const incidentElapsed = Math.max(0, elapsed - clock.startsAt) * INCIDENT_TIME_MULTIPLIER;
+            const remaining = Math.max(0, clock.totalSeconds - incidentElapsed);
             const active = elapsed >= clock.startsAt;
 
             return (

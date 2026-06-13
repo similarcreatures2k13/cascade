@@ -39,6 +39,18 @@ import { parseRelayMessage, relayEventToDemoEvent, type RelayConnectionStatus } 
 import { cn, formatCountdown, formatCurrency, formatIncidentTime } from "@/lib/utils";
 import { useDemoStore } from "@/store/use-demo-store";
 
+import { useState } from "react";
+
+function useRecordingMode() {
+  const [isRecording, setIsRecording] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    setIsRecording(params.get("recording") === "true");
+  }, []);
+  return isRecording;
+}
+
 const roomOrder: RoomId[] = ["war", "regulatory", "forensics", "quantification", "carrier"];
 
 function severityClasses(severity: DemoEvent["severity"]) {
@@ -59,9 +71,21 @@ function activeRoomForEvents(events: DemoEvent[]): RoomId {
 }
 
 function biLoss(elapsed: number) {
-  if (elapsed < 45) return 0;
-  const seconds = elapsed - 45;
-  return 240000 + seconds * 21650 + Math.max(0, elapsed - 78) * 9800;
+  // Convert demo seconds to incident hours
+  const incidentHours = (elapsed * INCIDENT_TIME_MULTIPLIER) / 3600;
+
+  // Mitigation labor accrues from T+0 (Halcyon IR + Whitcomb counsel + internal)
+  // ~$40K/hour blended across all responders
+  const mitigationLabor = incidentHours * 40000;
+
+  // Lost revenue: starts after 8-hour BI waiting period
+  // Meridian TrialBridge: 340K records × $48/mo / 30 days = $544K/day = $22,666/hr
+  const lostRevenue = Math.max(0, incidentHours - 8) * 22666;
+
+  // Notification + credit monitoring costs lock in after counsel decides scope (~T+24)
+  const notificationCosts = Math.max(0, incidentHours - 24) * 15000;
+
+  return Math.round(mitigationLabor + lostRevenue + notificationCosts);
 }
 
 function recruitedSpecialists(elapsed: number) {
@@ -110,14 +134,14 @@ export function CascadeDashboard() {
   return (
     <main className="scanline flex h-screen w-screen flex-col overflow-hidden bg-[#0a0a0a] text-white">
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(0,255,159,0.14),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(0,224,192,0.12),transparent_26%),linear-gradient(135deg,#0a0a0a,#111111_46%,#070707)]" />
-      <TopBar elapsed={elapsed} relayStatus={relayStatus} liveEventCount={liveEvents.length} />
+      <TopBar elapsed={elapsed} relayStatus={relayStatus} liveEventCount={liveEventCount} isRecording={isRecording} />
 
       <section className="relative z-10 grid min-h-0 flex-1 grid-cols-[240px_minmax(0,1fr)_320px]">
         <LeftRail elapsed={elapsed} activeRoom={activeRoom} visibleEvents={visibleEvents} />
 
         <section className="min-h-0 border-x border-white/10 bg-black/18 p-4">
           <div className="flex h-full min-h-0 flex-col rounded-3xl border border-white/10 bg-[#0d0f0f]/82 shadow-2xl shadow-black/50">
-            <RoomHeader activeRoom={activeRoom} latestEvent={latestEvent} specialists={specialists.length} />
+            <RoomHeader activeRoom={activeRoom} latestEvent={latestEvent} specialists={specialists.length} isRecording={isRecording} />
 
             <div className="min-h-0 flex-1 space-y-3 overflow-hidden p-4">
               <AnimatePresence mode="popLayout">
@@ -196,10 +220,12 @@ function TopBar({
   elapsed,
   relayStatus,
   liveEventCount,
+  isRecording,
 }: {
   elapsed: number;
   relayStatus: RelayConnectionStatus;
   liveEventCount: number;
+  isRecording: boolean;
 }) {
   return (
     <header className="relative z-10 grid h-[60px] grid-cols-[240px_minmax(0,1fr)_320px] border-b border-white/10 bg-black/70 backdrop-blur-xl">
@@ -224,7 +250,7 @@ function TopBar({
           <span className="inline-flex items-center gap-2 rounded-full border border-[#ff3b5c]/45 bg-[#ff3b5c]/10 px-3 py-1 text-xs font-semibold text-[#ffb3c0]">
             <Flame size={13} /> Severity 1 - Ransomware
           </span>
-          <RelayStatusPill status={relayStatus} liveEventCount={liveEventCount} />
+          {!isRecording && <RelayStatusPill status={relayStatus} liveEventCount={liveEventCount} />}
         </div>
       </div>
 
@@ -317,7 +343,7 @@ function LeftRail({
   );
 }
 
-function RoomHeader({ activeRoom, latestEvent, specialists }: { activeRoom: RoomId; latestEvent?: DemoEvent; specialists: number }) {
+function RoomHeader({ activeRoom, latestEvent, specialists, isRecording }: { activeRoom: RoomId; latestEvent?: DemoEvent; specialists: number; isRecording: boolean }) {
   const room = rooms.find((candidate) => candidate.id === activeRoom)!;
 
   return (
@@ -339,6 +365,11 @@ function RoomHeader({ activeRoom, latestEvent, specialists }: { activeRoom: Room
         </span>
         <span className="inline-flex items-center gap-1 rounded-full border border-[#00e0c0]/25 bg-[#00e0c0]/8 px-3 py-1 text-[#a8fff1]">
           <Sparkles size={14} /> deterministic replay
+          {!isRecording && (
+  <span className="inline-flex items-center gap-1 rounded-full border border-[#00e0c0]/25 bg-[#00e0c0]/8 px-3 py-1 text-[#a8fff1]">
+    <Sparkles size={14} /> deterministic replay
+  </span>
+)}
         </span>
       </div>
     </div>
@@ -540,21 +571,24 @@ function Metric({ label, value, danger }: { label: string; value: string; danger
   );
 }
 
-function ApprovalBar({
+typescriptfunction ApprovalBar({
   approvalActive,
   briefingReady,
   isPlaying,
   onToggle,
   onReset,
+  isRecording,
 }: {
   approvalActive: boolean;
   briefingReady: boolean;
   isPlaying: boolean;
   onToggle: () => void;
   onReset: () => void;
+  isRecording: boolean;
 }) {
   return (
     <footer className="relative z-10 flex h-[80px] items-center justify-between border-t border-white/10 bg-black/78 px-5 backdrop-blur-xl">
+      {!isRecording && (
       <div className="flex items-center gap-3">
         <motion.div
           animate={approvalActive && !briefingReady ? { scale: [1, 1.08, 1], boxShadow: ["0 0 0 rgba(0,255,159,0)", "0 0 28px rgba(0,255,159,0.38)", "0 0 0 rgba(0,255,159,0)"] } : {}}
@@ -584,6 +618,7 @@ function ApprovalBar({
           <RotateCcw size={15} />
           Reset
         </button>
+    )}
       </div>
     </footer>
   );

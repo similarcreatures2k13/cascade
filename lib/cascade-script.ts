@@ -28,7 +28,7 @@ export const INCIDENT_TIME_MULTIPLIER =
   (INCIDENT_DURATION_HOURS * 3600) / DEMO_DURATION_SECONDS; // = 2160
 
 export const clientProfile = {
-  name: "Meridian Health Analytics",
+  name: "Vela Clinical",
   employees: 400,
   sector: "Healthcare SaaS",
   status: "Recently IPO'd",

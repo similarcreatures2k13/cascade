@@ -28,7 +28,7 @@ The production design uses the same protocol with a silent observer agent joined
 
 ## Demo scenario
 
-- Client: Meridian Health Analytics
+- Client: Vela Clinical
 - Ransomware family: Akira
 - Triggered regimes: HIPAA BAA, CCPA, SEC Item 1.05, GDPR
 - Human gate: the breach coach partner must approve external communications before they leave privileged context

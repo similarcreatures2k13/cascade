@@ -74,12 +74,12 @@ function biLoss(elapsed: number) {
   // Convert demo seconds to incident hours
   const incidentHours = (elapsed * INCIDENT_TIME_MULTIPLIER) / 3600;
 
-  // Mitigation labor accrues from T+0 (Halcyon IR + Whitcomb counsel + internal)
+  // Mitigation labor accrues from T+0 (Stroud IR + Whitcomb counsel + internal)
   // ~$40K/hour blended across all responders
   const mitigationLabor = incidentHours * 40000;
 
   // Lost revenue: starts after 8-hour BI waiting period
-  // Meridian TrialBridge: 340K records × $48/mo / 30 days = $544K/day = $22,666/hr
+  // Vela TrialBridge: 340K records × $48/mo / 30 days = $544K/day = $22,666/hr
   const lostRevenue = Math.max(0, incidentHours - 8) * 22666;
 
   // Notification + credit monitoring costs lock in after counsel decides scope (~T+24)

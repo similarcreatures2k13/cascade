@@ -1,13 +1,13 @@
-Meridian Health Analytics — Cascade Case File
+Vela Clinical — Cascade Case File
 Company
-Meridian Health Analytics, Inc. (NASDAQ: MRDH)
-Clinical-trial data coordination SaaS. Serves CROs and pharma sponsors running multi-site oncology trials. 412 employees. HQ: San Francisco. EU subsidiary: Meridian Health Analytics Ireland Ltd., Dublin (handles EU patient data per GDPR). IPO'd March 2025 at $18/share, currently $24. Q1 2026 revenue $31M, up 47% YoY.
+Vela Clinical, Inc. (NASDAQ: MRDH)
+Clinical-trial data coordination SaaS. Serves CROs and pharma sponsors running multi-site oncology trials. 412 employees. HQ: San Francisco. EU subsidiary: Vela Clinical Ireland Ltd., Dublin (handles EU patient data per GDPR). IPO'd March 2025 at $18/share, currently $24. Q1 2026 revenue $31M, up 47% YoY.
 Their flagship product, TrialBridge, ingests patient enrollment data, lab results, adverse event reports, and imaging across trial sites and produces sponsor-facing dashboards. Active in 38 Phase 2/3 trials. ~340,000 patient records under management. All US patient data is covered by Business Associate Agreements with sponsor sites (HIPAA-BAA). EU patient data covered by GDPR Article 28 processor agreements.
-Critical context for the incident: Meridian is the data coordinator for NCT-04-7821, a Phase 3 oncology trial for a pancreatic cancer immunotherapy. Enrollment window closes 96 hours from T+0. If Meridian cannot deliver enrollment confirmations to sites by then, 47 patients miss their treatment windows.
+Critical context for the incident: Vela is the data coordinator for NCT-04-7821, a Phase 3 oncology trial for a pancreatic cancer immunotherapy. Enrollment window closes 96 hours from T+0. If Vela cannot deliver enrollment confirmations to sites by then, 47 patients miss their treatment windows.
 Insurance
-Carrier: Beacon Specialty Insurance (fictional composite).
+Carrier: Northbridge Cyber (fictional composite).
 
-Policy: CyberEdge Enterprise Risk, Form CE-2024.
+Policy: Enterprise Risk Enterprise Risk, Form CE-2024.
 
 Aggregate Limit: $5,000,000.
 
@@ -29,19 +29,19 @@ Critical exclusions to monitor:
 
 Panel vendors (pre-approved by carrier):
 
-IR Firm: Halcyon Forensics
+IR Firm: Stroud IR
 Breach Counsel: Whitcomb & Ferris LLP (the user / "you" — the breach coach)
 Negotiator: Arbor Cyber Negotiations
 Forensic Accountant: Belmont Advisory Partners
 
 T+0 — The Notification
-Slack message from Meridian's CISO to Whitcomb & Ferris's emergency line, 04:17 PT, Tuesday morning:
+Slack message from Vela's CISO to Whitcomb & Ferris's emergency line, 04:17 PT, Tuesday morning:
 
 Hey — we think we have ransomware. Production database servers are encrypted. There's a note on every endpoint. TrialBridge is down. Need help now.
 
 The Ransom Note
 Posted as README.txt on every encrypted endpoint. Akira-typical formatting:
-Hello Meridian Health Analytics.
+Hello Vela Clinical.
 
 Your network has been compromised. Files encrypted with our 
 proprietary algorithm. We have exfiltrated 847GB of data from 
@@ -62,7 +62,7 @@ Contact: akira-mediation@[REDACTED].onion
 Reference: MRDH-2026-0613
 
 — Akira
-Initial IOCs (Halcyon Forensics preliminary, T+02:00)
+Initial IOCs (Stroud IR preliminary, T+02:00)
 
 Initial access: VPN credential compromise via stolen session token. CVE under investigation, possibly CVE-2024-3400-class (Pan-OS GlobalProtect).
 Lateral movement: Impacket SMB, then RDP via compromised service account svc_trialbridge_etl.
@@ -78,8 +78,8 @@ Public company material non-public information: yes (unreleased Q2 financials an
 Forensics Update (T+18:00)
 
 Entry vector confirmed: VPN appliance vulnerability disclosed in vendor advisory dated May 28, 2026 (16 days before incident). Patch was available May 30.
-Meridian's patching SLA for VPN appliances is 14 days. Patch was scheduled for June 13 maintenance window — same day as the incident.
-Coverage implication: the patch was available 14 days. Meridian's SLA is 14 days. The exclusion §IV.12 triggers at 30 days. Coverage holds, but barely. The adversary agent will flag this as a carrier-dispute risk.
+Vela's patching SLA for VPN appliances is 14 days. Patch was scheduled for June 13 maintenance window — same day as the incident.
+Coverage implication: the patch was available 14 days. Vela's SLA is 14 days. The exclusion §IV.12 triggers at 30 days. Coverage holds, but barely. The adversary agent will flag this as a carrier-dispute risk.
 
 Jurisdictional Exposure
 The Regulatory Coordinator agent identifies the following triggered regimes at T+04:00:
@@ -90,7 +90,7 @@ TrialBridge revenue model: $48 per patient-record per month, recognized ratably.
 Period of restoration: estimated 8-14 days for full restoration with carrier coverage starting after 8-hour waiting period.
 Mitigation costs accruing in real-time:
 
-Halcyon Forensics IR engagement: $4,200/hr blended, ~$890,000 estimated
+Stroud IR IR engagement: $4,200/hr blended, ~$890,000 estimated
 Cloud emergency capacity (clean-room rebuild on AWS): ~$340,000 over restoration period
 Notification costs (printing, mailing, call center): est. $1.20M for 340K records
 Credit monitoring (2 years, US affected individuals): est. $2.40M
@@ -113,7 +113,7 @@ Agent-Specific Reference Outputs
 These are the canonical outputs each agent produces against this case file. Use these as the source of truth for the demo script and as the "ground truth" the live agents should approximate.
 Triage Agent output (T+00:15):
 
-Incident frame established. Insured: Meridian Health Analytics (NASDAQ: MRDH). Policy: Beacon CyberEdge CE-2024. Aggregate limit $5M, retention $250K. Coverages triggered: A, B, D, F, G. Exclusions flagged for monitoring: §IV.7 (Social Engineering), §IV.12 (Failure to Patch), §IV.19 (Betterment). Data types in scope: PHI, PII, financial MNPI, EU personal data. Geographies: US (24 states), EU (Ireland). Public company status: yes. Routing to @cascade/regulatory-coordinator and @cascade/forensics-liaison.
+Incident frame established. Insured: Vela Clinical (NASDAQ: MRDH). Policy: Northbridge Enterprise Risk CE-2024. Aggregate limit $5M, retention $250K. Coverages triggered: A, B, D, F, G. Exclusions flagged for monitoring: §IV.7 (Social Engineering), §IV.12 (Failure to Patch), §IV.19 (Betterment). Data types in scope: PHI, PII, financial MNPI, EU personal data. Geographies: US (24 states), EU (Ireland). Public company status: yes. Routing to @cascade/regulatory-coordinator and @cascade/forensics-liaison.
 
 Regulatory Coordinator output (T+00:45):
 
@@ -121,7 +121,7 @@ Triggered regimes identified: HIPAA BNR, CCPA + 23 state laws, GDPR Articles 33/
 
 Adversary Agent output (T+18:00):
 
-Carrier-side analysis: §IV.12 Failure-to-Patch is your largest coverage risk. The vendor advisory dated May 28 makes the patch available 16 days before incident; your client's documented SLA is 14 days. The exclusion triggers at 30 days, so you survive — but the carrier will argue that publicly-disclosed VPN vulnerabilities in this product class historically receive expedited patching at peer organizations. Recommend documenting the patching schedule and peer-benchmark research now, before the carrier requests it. Secondary risk: §IV.19 Betterment will reduce restoration coverage if Meridian opts for the AWS clean-room rebuild instead of restoring to pre-incident architecture. Quantify the betterment delta before authorizing.
+Carrier-side analysis: §IV.12 Failure-to-Patch is your largest coverage risk. The vendor advisory dated May 28 makes the patch available 16 days before incident; your client's documented SLA is 14 days. The exclusion triggers at 30 days, so you survive — but the carrier will argue that publicly-disclosed VPN vulnerabilities in this product class historically receive expedited patching at peer organizations. Recommend documenting the patching schedule and peer-benchmark research now, before the carrier requests it. Secondary risk: §IV.19 Betterment will reduce restoration coverage if Vela opts for the AWS clean-room rebuild instead of restoring to pre-incident architecture. Quantify the betterment delta before authorizing.
 
 HIPAA Specialist output (T+01:30):
 

@@ -166,6 +166,7 @@ export function CascadeDashboard() {
         isPlaying={isPlaying}
         onToggle={togglePlaying}
         onReset={reset}
+        isRecording={isRecording}
       />
     </main>
   );

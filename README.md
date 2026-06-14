@@ -4,6 +4,8 @@ Cascade is a deterministic multi-agent cyber-breach incident response coordinati
 
 The product surface is a Next.js 15 dashboard for a breach-response law firm partner coordinating a ransomware incident across privileged and non-privileged rooms. The demo can render live platform activity through a WebSocket relay agent, and falls back to scripted events for reliable recording.
 
+**Live demo:** https://cascade-beige.vercel.app
+
 ## Run locally
 
 ```bash

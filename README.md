@@ -1,49 +1,45 @@
 # Cascade
 
-Cascade is a deterministic multi-agent cyber-breach incident response coordination demo for the Band of Agents Hackathon track "Regulated & High-Stakes Workflows."
+**Multi-agent incident command for cyber-breach response.**
 
-The product surface is a Next.js 15 dashboard for a breach-response law firm partner coordinating a ransomware incident across privileged and non-privileged rooms. The demo can render live platform activity through a WebSocket relay agent, and falls back to scripted events for reliable recording.
+Cascade coordinates the work of triage, forensics, regulators, and carriers across the 72-hour window after a ransomware incident — built for the breach-coach partners at panel law firms who currently quarterback this work on spreadsheets and conference calls.
 
-**Live demo:** https://cascade-beige.vercel.app
+**Live demo:** https://cascade-beige.vercel.app/
+**Built for:** Band of Agents Hackathon 2026 — Track 3: Regulated & High-Stakes Workflows.
 
-## Run locally
+---
 
-```bash
-npm install
-npm run dev
-```
+## What Cascade is
 
-Open `http://localhost:3000` to view the single-screen incident dashboard.
+When ransomware hits a company, the response is run by a "breach coach" — a partner at a law firm like Mullen Coughlin, BakerHostetler, or Constangy. The breach coach coordinates a fleet of separate organizations on a hard clock: the carrier's adjuster, a panel-approved forensics firm, regulators, the insured's IT team, sometimes counsel, sometimes a negotiator.
 
-## Optional relay-agent mode
+That coordination is the workflow Cascade automates. A fleet of specialized AI agents handles the parallel workstreams — triage, regulatory notification, business interruption quantification, coverage-dispute analysis — coordinated through **Band**'s cross-framework agent platform.
 
-Run the portable Python relay to stream demo room events over WebSocket:
+## Architecture
 
-```bash
-python3 relay/cascade_relay.py --demo --speed 8
-NEXT_PUBLIC_CASCADE_RELAY_WS=ws://127.0.0.1:8765/rooms/cascade-demo npm run dev
-```
+Two surfaces:
 
-The production design uses the same protocol with a silent observer agent joined to each Cascade room. See `docs/platform-connection.md`.
+**1. The agent fleet (`apps/agents/`)** — Python agents using the Band SDK. Each agent is a `SimpleAdapter` subclass driving an OpenAI tool-calling loop, with Band's platform tools (`send_message`, `lookup_peers`, `add_participant`) auto-injected. Three agents are wired live for this submission:
+
+- **`@cascade/triage`** — Cyber breach triage specialist. When @-mentioned with an incident, parses the facts, identifies policy coverage and exclusions, and recruits the regulatory coordinator.
+- **`@cascade/regulatory-coordinator`** — The hero agent. Identifies triggered notification regimes (HIPAA, CCPA, GDPR, SEC Item 1.05), uses Band's `lookup_peers` to discover specialist agents, and `add_participant`s them into the room.
+- **`@cascade/hipaa-baa-specialist`** — Listed in Band's public directory. Computes HIPAA Breach Notification Rule obligations and clocks per 45 CFR §§ 164.400-414.
+
+**2. The dashboard (`app/`, `components/`, `lib/`, `store/`)** — Next.js 15 + TypeScript + Tailwind v4 + Framer Motion + Zustand. The breach-coach's war-room UI: privileged/non-privileged room model, ticking 72-hour incident clock, live notification countdown clocks per jurisdiction, accruing BI loss counter, human-approval gate for external communications.
 
 ## Demo scenario
 
-- Client: Vela Clinical
-- Ransomware family: Akira
-- Triggered regimes: HIPAA BAA, CCPA, SEC Item 1.05, GDPR
-- Human gate: the breach coach partner must approve external communications before they leave privileged context
+A fictional incident:
 
+- **Client:** Vela Clinical — a public clinical-trial data coordination SaaS, ~400 employees, California HQ, Ireland subsidiary processing EU patient data
+- **Ransomware family:** Akira (active in 2025-2026, healthcare-targeting, well-documented)
+- **Triggered regimes:** HIPAA Breach Notification Rule, California Civ Code §1798.82 (CCPA), GDPR Articles 33/34, SEC Form 8-K Item 1.05
+- **Human stakes anchor:** A Phase 3 oncology trial closes enrollment in 96 hours; if Vela goes dark, 47 patients miss their treatment windows
 
-## Live agent skeletons
+Full case file in [`docs/case-file.md`](./docs/case-file.md).
 
-The first platform-facing agent definitions live in `apps/agents`:
+## Why Band
 
-- `apps/agents/agents/triage.py` registers `@cascade/triage` through a CrewAI adapter, parses intake/policy artifacts, posts the incident frame, and @mentions the regulatory coordinator.
-- `apps/agents/agents/regulatory.py` registers `@cascade/regulatory-coordinator`, identifies triggered regimes, queries the registry, invites specialists into the Regulatory Room, and delegates assessments.
+Three architectural reasons Cascade is built on Band specifically, not LangGraph or CrewAI alone:
 
-These agents produce normal platform room messages. The relay agent observes those rooms and streams typed events to the dashboard.
-
-## Submission planning
-
-- Platform connection and requirements: `docs/platform-connection.md`
-- Judging rubric and submission assets: `docs/submission-map.md`
+1. **Cross-org by default.** A real breach response involves the insured, the carrier, panel counsel, panel forensics, panel negotiation, regulators, and the FBI — separate organizations with separate agents in production. Band's contact/permission model is the substrate for cross-org

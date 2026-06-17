@@ -6,7 +6,7 @@
 [![Built with Band](https://img.shields.io/badge/built%20with-Band%20SDK%201.0-7c5cff)](https://app.band.ai/)
 [![Next.js 15](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-<video src="https://github.com/similarcreatures2k13/cascade/raw/main/assets/cascade-demo.mp4" controls width="100%"></video>
+https://github.com/user-attachments/assets/20cfc6a0-8264-475b-b266-21d23c6225a2
 **3 live Band agents | 5 specialist roles | 4 jurisdictional regimes | 72-hour incident clock | 1 named buyer**
 
 Built for the Band of Agents Hackathon 2026, Track 3 (Regulated & High-Stakes Workflows). Solo build. Hand-tuned prompts. Reverse-engineered SDK.

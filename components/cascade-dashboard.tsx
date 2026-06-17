@@ -366,14 +366,11 @@ function RoomHeader({ activeRoom, latestEvent, specialists, isRecording }: { act
         <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-zinc-300">
           <BrainCircuit size={14} /> {specialists} specialists recruited
         </span>
-        <span className="inline-flex items-center gap-1 rounded-full border border-[#00e0c0]/25 bg-[#00e0c0]/8 px-3 py-1 text-[#a8fff1]">
-          <Sparkles size={14} /> deterministic replay
-          {!isRecording && (
-  <span className="inline-flex items-center gap-1 rounded-full border border-[#00e0c0]/25 bg-[#00e0c0]/8 px-3 py-1 text-[#a8fff1]">
-    <Sparkles size={14} /> deterministic replay
-  </span>
-)}
-        </span>
+        {!isRecording && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-[#00e0c0]/25 bg-[#00e0c0]/8 px-3 py-1 text-[#a8fff1]">
+            <Sparkles size={14} /> deterministic replay
+          </span>
+        )}
       </div>
     </div>
   );

@@ -1,3 +1,5 @@
+![Cascade banner](./assets/cascade-banner.png)
+
 # Cascade
 
 **Multi-agent incident command for cyber-breach response.**

@@ -1,8 +1,4 @@
-![Cascade banner](./assets/cascade-banner.png)
-
-# Cascade
-
-**Multi-agent incident command for cyber-breach response.**
+![Cascade — Multi-agent incident command for cyber-breach response](./assets/cascade-banner.png)
 
 [![Live Demo](https://img.shields.io/badge/demo-cascade--beige.vercel.app-39FF9E)](https://cascade-beige.vercel.app/)
 [![Built with Band](https://img.shields.io/badge/built%20with-Band%20SDK%201.0-7c5cff)](https://app.band.ai/)
@@ -11,7 +7,7 @@
 
 https://github.com/user-attachments/assets/20cfc6a0-8264-475b-b266-21d23c6225a2
 
-**3 live Band agents | 5 specialist roles | 4 jurisdictional regimes | 72-hour incident clock | 1 named buyer**
+**3 live Band agents | 4 jurisdictional regimes | 72-hour incident clock | 1 named buyer**
 
 Built for the Band of Agents Hackathon 2026, Track 3 (Regulated & High-Stakes Workflows). Solo build. Hand-tuned prompts. Reverse-engineered SDK.
 
